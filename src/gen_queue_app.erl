@@ -17,6 +17,7 @@
 
 -behaviour(application).
 
+-include_lib("eunit/include/eunit.hrl").
 %% Application callbacks
 -export([start/2, stop/1]).
 
@@ -29,3 +30,13 @@ start(_StartType, _StartArgs) ->
 
 stop(_State) ->
     ok.
+
+-ifdef(TEST).
+
+app_test() ->
+    ok = application:start(gen_queue),
+    ok = gen_queue:push(a),
+    {ok, a} = gen_queue:pop(),
+    ok = application:stop(gen_queue).
+
+-endif.

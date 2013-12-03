@@ -31,7 +31,8 @@
          %% nb_push/2,
          %% nb_pop/1
          info/0,
-         info/1
+         info/1,
+         stop/1
         ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -68,6 +69,8 @@ pop() -> pop(?SERVER).
 info() -> info(?SERVER).
 info(Pid) -> gen_server:call(Pid, info).
 
+stop(Pid) -> gen_server:call(Pid, stop).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -86,8 +89,6 @@ init([]) ->
 %%                                   {noreply, State, Timeout} |
 %%                                   {stop, Reason, Reply, State} |
 %%                                   {stop, Reason, State}
-%% handle_call(_Request, _From, State) ->
-%%     Reply = ok,
 handle_call({push, Thingie}, _, #state{dataq=Q,waitq=WQ} = State) ->
     case {queue:is_empty(Q), queue:is_empty(WQ)} of
         {_, true} -> %% none waiting
@@ -116,7 +117,10 @@ handle_call(pop, From, #state{dataq=Q,waitq=WQ} = State) ->
     end;
 
 handle_call(info, _, #state{dataq=Q,waitq=WQ} = State) ->
-    {reply, [{length,queue:len(Q)}, {waiting,queue:len(WQ)}], State}.
+    {reply, [{length,queue:len(Q)}, {waiting,queue:len(WQ)}], State};
+
+handle_call(stop, _, State) ->
+    {stop, normal, ok, State}.
 
 handle_both_not_empty(#state{dataq=Q,waitq=WQ} = State) ->
     DataLen = queue:len(Q),
@@ -183,12 +187,14 @@ gen_queue_test() ->
     {ok, Pid} = gen_queue:start_link(),
     ?assert(is_pid(Pid)),
     ok = gen_queue:push(a),
-    {ok, a} = gen_queue:pop().
+    {ok, a} = gen_queue:pop(),
+    ok = gen_queue:stop(Pid).
 
 named_test() ->
     {ok, Pid} = gen_queue:start_link(name),
     ?assert(is_pid(Pid)),
     ok = gen_queue:push(name, a),
-    {ok, a} = gen_queue:pop(name).
+    {ok, a} = gen_queue:pop(name),
+    ok = gen_queue:stop(name).
 
 -endif.
