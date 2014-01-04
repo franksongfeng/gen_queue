@@ -132,9 +132,10 @@ handle_call(info, _, #state{dataq=Q,waitq=WQ} = State) ->
     {reply, [{length,queue:len(Q)}, {waiting,queue:len(WQ)}], State};
 
 handle_call(stop, _, #state{dataq=Q,waitq=WQ} = State) ->
+    %% won't be needed; see terminate/2
     [ gen_server:reply(Worker, {error, destroyed}) ||
         Worker <- queue:to_list(WQ) ],
-    {stop, normal, {ok, queue:to_list(Q)}, State#state{dataq=[],waitq=[]}}.
+    {stop, normal, {ok, queue:to_list(Q)}, State#state{dataq=queue:new(),waitq=queue:new()}}.
 
 handle_both_not_empty(#state{dataq=Q,waitq=WQ} = State) ->
     DataLen = queue:len(Q),
