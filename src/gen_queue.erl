@@ -24,6 +24,7 @@
 
 %% API
 -export([start_link/0, start_link/1,
+         start_link2/0, create_queue/1, destroy_queue/1,
          push/1,
          pop/0,
          push/2,
@@ -51,11 +52,22 @@
 %%% API
 %%%===================================================================
 
+create_queue(Name) ->
+    ChildSpec = {Name, {gen_queue, start_link, []}, permanent, 5000, worker, [gen_queue]},
+    {ok, _Pid} = supervisor:start_child(gen_queue_sup, ChildSpec).
+
+destroy_queue(Name) ->
+    %% {ok, _Pid} = supervisor:delete_child(gen_queue_sup, ChildSpec).
+    error.
+
 %% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 start_link() ->
     start_link(?SERVER).
 start_link(Name) ->
     gen_server:start_link({local, Name}, ?MODULE, [], []).
+
+start_link2() ->
+    gen_server:start_link(?MODULE, [], []).
 
 %% if we make `push` a blocking call, set it as infinity
 push(Pid, Thingie) -> gen_server:call(Pid, {push, Thingie}).
