@@ -53,12 +53,12 @@
 %%%===================================================================
 
 create_queue(Name) ->
-    ChildSpec = {Name, {gen_queue, start_link, []}, permanent, 5000, worker, [gen_queue]},
+    ChildSpec = {Name, {gen_queue, start_link, [Name]}, permanent, 5000, worker, [gen_queue]},
     {ok, _Pid} = supervisor:start_child(gen_queue_sup, ChildSpec).
 
 destroy_queue(Name) ->
     %% {ok, _Pid} = supervisor:delete_child(gen_queue_sup, ChildSpec).
-    error.
+    stop(Name).
 
 %% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 start_link() ->
@@ -131,8 +131,10 @@ handle_call(pop, From, #state{dataq=Q,waitq=WQ} = State) ->
 handle_call(info, _, #state{dataq=Q,waitq=WQ} = State) ->
     {reply, [{length,queue:len(Q)}, {waiting,queue:len(WQ)}], State};
 
-handle_call(stop, _, State) ->
-    {stop, normal, ok, State}.
+handle_call(stop, _, #state{dataq=Q,waitq=WQ} = State) ->
+    [ gen_server:reply(Worker, {error, destroyed}) ||
+        Worker <- queue:to_list(WQ) ],
+    {stop, normal, {ok, queue:to_list(Q)}, State#state{dataq=[],waitq=[]}}.
 
 handle_both_not_empty(#state{dataq=Q,waitq=WQ} = State) ->
     DataLen = queue:len(Q),
