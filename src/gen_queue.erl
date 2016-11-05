@@ -44,8 +44,8 @@
 -define(SERVER, ?MODULE).
 
 -record(state, {
-          dataq = queue:new() :: queue(),
-          waitq = queue:new() :: queue()
+          dataq = queue:new() :: queue:queue(),
+          waitq = queue:new() :: queue:queue()
          }).
 
 %%%===================================================================
